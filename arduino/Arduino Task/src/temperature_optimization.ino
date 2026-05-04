@@ -72,10 +72,6 @@ void send_data_to_pc(){
   }
 }
 
-int moving_average(int data[], int size, int window) {
-  
-}
-
 int decide_power_mode(){
  if (fk <= 0.1){ // if dominant frequency is less than 0.1 Hz, we can go to sleep mode
    return POWER_DOWN;
@@ -84,6 +80,33 @@ int decide_power_mode(){
  } else { // if dominant frequency is between 0.1 and 0.5 Hz, go to idle mode
    return IDLE;
  }
+}
+//fix floating average
+float moving_average(){
+ float temp_differences[720]; // array to store difference between consecutive temp readings
+  if (numSamples < 10){
+    for (int i = 1; i < numSamples; i++){
+      temp_differences[i] = temperature_data_array[i] - temperature_data_array[i-1]; //calculates differences between each consecutive temp reading
+      }
+   float temp_diff_sum = 0;
+   for (int i = 1; i < numSamples; i++){
+     temp_diff_sum += fabs(temp_differences[i]); // sums up absolute value of differences
+      }
+      float temp_diff_avg = temp_diff_sum / (numSamples - 1); //calculates average of differences, divide by numSamples - 1 because we have one less difference than number of samples
+      return temp_diff_avg; // returns average of differences, which is the moving average of the last 10 temperature readings
+  } else {
+    for (int i = numSamples - 10; i < numSamples; i++){
+      temp_differences[i] = temperature_data_array[i] - temperature_data_array[i-1]; //calculates differences between each consecutive temp reading
+      }
+   float temp_diff_sum = 0;
+   for (int i = numSamples - 10; i < numSamples; i++){
+     temp_diff_sum += fabs(temp_differences[i]); // sums up absolute value of differences
+      }
+      float temp_diff_avg = temp_diff_sum / 10; //calculates average of differences,
+      return temp_diff_avg; // returns average of differences, which is the moving average of the last 10 temperature readings
+      } 
+  
+}
 
 void setup()
 {
