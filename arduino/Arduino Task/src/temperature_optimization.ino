@@ -18,12 +18,13 @@ const int ACTIVE = 0;
 const int IDLE = 1;
 const int POWER_DOWN = 2;
 int power_mode = ACTIVE; // variable to track current power mode, start in active mode
+unsigned long timecollecting = 180000; //variable for time spent collecting data
+int IDLEcyclecount = 0; //counter for number of cycles in IDLE mode, if 5 are idle straight it goes to power down
 
 void collect_temperature_data(){ //collects data and stores it in temperature_data_array
   unsigned long start_time = millis();
   int index = 0; // index for storing data in array
-  
-  while (millis() - start_time < 180000 && index < 720) { // collect data for 3 minutes at the start (180000 ms), && prevents index overflow
+  while (millis() - start_time < timecollecting && index < 720) { // collect data for 3 minutes at the start (180000 ms), && prevents index overflow
     int a = analogRead(pinTempSensor);
     float R = 1023.0/a-1.0;
     R = R0*R;
@@ -115,11 +116,34 @@ void setup()
 
 void loop()
 {
-  int a = analogRead(pinTempSensor);
-  float R = 1023.0/a-1.0;
-  R = R0*R;
-  float temperature = 1.0/(log(R/R0)/B+1/298.15)-273.15; // convert to temperature via datasheet
-  Serial.print("temperature = ");
-  Serial.println(temperature);
-  delay(100);
+  collect_temperature_data(); // collect temperature data for 3 minutes at the start
+  timecollecting = 60000;
+  apply_dft(); // apply DFT to collected data to find dominant frequency
+  send_data_to_pc(); // send collected data and DFT results to PC for analysis
+  power_mode = decide_power_mode(); // decide power mode based on dominant frequency
+  float temp_moving_avg = moving_average(); // calculate moving average of temperature differences
+  Serial.print("Moving Average of Temperature Differences: ");
+  Serial.println(temp_moving_avg);
+  if (power_mode == ACTIVE){
+    Serial.println("Power Mode: ACTIVE");
+    sampling_rate = 1000/(fk*2);
+    if (sampling_rate < 250){
+    sampling_rate = 250;
+      } else if (sampling_rate > 2000){
+      sampling_rate = 2000; 
+      }
+  } else if (power_mode == IDLE){
+      Serial.println("Power Mode: IDLE");
+      sampling_rate = 5000;
+      IDLEcyclecount++;
+  } else {
+        Serial.println("Power Mode: POWER DOWN");
+        sampling_rate = 30000;
+      }
+  if (IDLEcyclecount >= 5){
+    Serial.print("5 IDLE cycles reached, moving to POWER DOWN mode");
+    power_mode = POWER_DOWN;
+    sampling_rate = 30000;
+    IDLEcyclecount = 0;
+  }
 }
