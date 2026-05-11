@@ -1,30 +1,31 @@
-// Loovee @ 2015-8-26
 #include <Arduino.h>
 #include <math.h>
-const int B = 4275000; // B value of the thermistor
-const int R0 = 100000; // R0 = 100k
+const long B = 4275000; // B value of the thermistor
+const long R0 = 100000; // R0 = 100k
 const int pinTempSensor = A0; // Grove - Temperature Sensor connect to A0
 
-//my variables lmao
-float temperature_data_array[720]; // array to store temperature data to process in DFT
-int sampling_rate = 1000; // sampling rate in ms, changeable, active mode first so we need 1hz first
+//my variables
+float temperature_data_array[60]; // array to store temperature data to process in DFT
+int sampling_rate = 180000; // sampling rate in ms, changeable, 3 min first
 int numSamples = 0; // number of samples to collect
-float real[720]; // array to store real part of DFT results, size to handle worse case 4hz for 3 min, which is 720 samples
-float imag[720]; // array to store imaginary part of DFT results 
-float magnitude[720]; // array to store magnitude of DFT calculations
+float real[60]; // array to store real part of DFT results,
+float imag[60]; // array to store imaginary part of DFT results 
+float magnitude[60]; // array to store magnitude of DFT calculations
 float fk; // variable to store frequency of dominant frequency component
-unsigned long sample_time[720];
+unsigned long sample_time[60]; //array to store time of when sample is collected 
 const int ACTIVE = 0;
 const int IDLE = 1;
 const int POWER_DOWN = 2;
 int power_mode = ACTIVE; // variable to track current power mode, start in active mode
-unsigned long timecollecting = 180000; //variable for time spent collecting data
+unsigned long timecollecting = 10000; //variable for time spent collecting data
 int IDLEcyclecount = 0; //counter for number of cycles in IDLE mode, if 5 are idle straight it goes to power down
+float temp_differences[60]; // array to store difference between consecutive temp readings
+float temp_moving_avg = 0; // calculate moving average of temperature differences
 
 void collect_temperature_data(){ //collects data and stores it in temperature_data_array
   unsigned long start_time = millis();
   int index = 0; // index for storing data in array
-  while (millis() - start_time < timecollecting && index < 720) { // collect data for 3 minutes at the start (180000 ms), && prevents index overflow
+  while (millis() - start_time < timecollecting && index < 60) { // collect data for 3 minutes at the start (180000 ms), && prevents index overflow
     int a = analogRead(pinTempSensor);
     float R = 1023.0/a-1.0;
     R = R0*R;
@@ -56,7 +57,11 @@ float* apply_dft(){
    }
   } 
  fk = (bigIndex * sampling_rateHz) / numSamples; // calculate frequency corresponding to index k, use static so it lives in program
-return &fk; // return pointer to frequency of dominant frequency component
+ if (magnitude[bigIndex] <= 0.01) {
+    fk = 0;
+    return &fk;} else{
+      return &fk; // return pointer to frequency of dominant frequency component
+    }
 }
 
 void send_data_to_pc(){
@@ -73,18 +78,7 @@ void send_data_to_pc(){
   }
 }
 
-int decide_power_mode(){
- if (fk <= 0.1){ // if dominant frequency is less than 0.1 Hz, we can go to sleep mode
-   return POWER_DOWN;
- } else if (fk > 0.5){ // if dominant frequency is greater than 0.5 hz, we go to active mode
-   return ACTIVE;
- } else { // if dominant frequency is between 0.1 and 0.5 Hz, go to idle mode
-   return IDLE;
- }
-}
-//fix floating average
 float moving_average(){
- float temp_differences[720]; // array to store difference between consecutive temp readings
   if (numSamples < 10){
     for (int i = 1; i < numSamples; i++){
       temp_differences[i] = temperature_data_array[i] - temperature_data_array[i-1]; //calculates differences between each consecutive temp reading
@@ -106,7 +100,16 @@ float moving_average(){
       float temp_diff_avg = temp_diff_sum / 10; //calculates average of differences,
       return temp_diff_avg; // returns average of differences, which is the moving average of the last 10 temperature readings
       } 
-  
+}
+
+int decide_power_mode(){
+ if (fk <= 0.1 && temp_moving_avg <= 0.1){ // if dominant frequency is less than 0.1 Hz, we can go to sleep mode. temp_moving_avg set to 0.1 as a low threshold
+   return POWER_DOWN;
+ } else if (fk > 0.5 || temp_moving_avg >= 0.5){ // if dominant frequency is greater than 0.5 hz, we go to active mode. temp_moving_avg set to 0.5 degrees as a high difference in change. selected OR function as it could have high oscillations but low change in magnitude or vice versa, so it should only work when both magnitude and fk is high
+   return ACTIVE;
+ } else { // if dominant frequency is between 0.1 and 0.5 Hz, go to idle mode
+   return IDLE;
+ }
 }
 
 void setup()
@@ -116,12 +119,13 @@ void setup()
 
 void loop()
 {
+  Serial.print("Collecting Data...\n");
   collect_temperature_data(); // collect temperature data for 3 minutes at the start
   timecollecting = 60000;
   apply_dft(); // apply DFT to collected data to find dominant frequency
   send_data_to_pc(); // send collected data and DFT results to PC for analysis
+  temp_moving_avg = moving_average();
   power_mode = decide_power_mode(); // decide power mode based on dominant frequency
-  float temp_moving_avg = moving_average(); // calculate moving average of temperature differences
   Serial.print("Moving Average of Temperature Differences: ");
   Serial.println(temp_moving_avg);
   if (power_mode == ACTIVE){
@@ -132,6 +136,7 @@ void loop()
       } else if (sampling_rate > 2000){
       sampling_rate = 2000; 
       }
+    IDLEcyclecount = 0;
   } else if (power_mode == IDLE){
       Serial.println("Power Mode: IDLE");
       sampling_rate = 5000;
@@ -139,6 +144,7 @@ void loop()
   } else {
         Serial.println("Power Mode: POWER DOWN");
         sampling_rate = 30000;
+        IDLEcyclecount = 0;
       }
   if (IDLEcyclecount >= 5){
     Serial.print("5 IDLE cycles reached, moving to POWER DOWN mode");
@@ -146,4 +152,8 @@ void loop()
     sampling_rate = 30000;
     IDLEcyclecount = 0;
   }
+  Serial.print("Sampling Rate:");
+  Serial.println(sampling_rate);
+  Serial.print("Fk:");
+  Serial.println(fk);
 }

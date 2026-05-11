@@ -9,3 +9,13 @@ in the development cycle.
 
 More information about PlatformIO Unit Testing:
 - https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+
+
+Memory explanation:
+- The array is autofilled based on the mode, where the variable numSamples dynamically decides the amount of samples collected, saving memory.
+- system utilizes 6 global float arrays of size 720, plus supporting variables:
+- 6 × 720 × 4 bytes = 17,280 bytes of RAM for arrays alone
+- Arduino Uno only has 2,048 bytes of RAM
+- this exceeds available RAM on the board, so whilst the program may continue to compile 
+and run, it risks being unstable, creating corrupted data, and unexpected crashes due to stack overflow.
+- an improvement would be to dynamically reduce the size of the global arrays from 720 to 240 as it wouldnt need that many samples realistically over time, and would overflow the arduino uno's 2kb of ram, leading to whilst runnable program, it would be unstable. Alternatively, by using an Arduino MEGA with 8kb of ram it may be handle to the larger array sizes.
