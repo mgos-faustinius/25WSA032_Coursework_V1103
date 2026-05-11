@@ -36,6 +36,10 @@ while es.active:
 
     #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
 
+    if bot.kind == 'Robot':                                                                     # if the bot is a robot, we want to check its soc and decide whether to charge or deliver. Droids and drones don't have to worry about charging, so we can skip this for them.
+      if pizza.weight == 12:
+        bot.deliver(pizza)
+
     if bot.soc / bot.max_soc < charge_threshold and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
       bot.charge(charger)                                                       # initiate charging.
     if bot.activity == 'idle':                                                  # if bot is idle, contract to deliver a ready pizza.
