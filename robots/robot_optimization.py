@@ -56,11 +56,15 @@ while es.active:
 
     #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
 
-    if bot.soc / bot.max_soc < charge_threshold[bot.kind] and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
-      nearest_charger, distance_to_charger = find_nearest_charger(bot, es)    # uses function to find nearest charger and distance to the charger    
+    nearest_charger, d = find_nearest_charger(bot, es) #find nearest charger for oppotunisitc charging
+    if d < 3 and bot.soc / bot.max_soc < (charge_threshold[bot.kind]+ 0.10) and bot.station is None: #if within 3 units and current charge is below threshold + 10%, robot goes for opportunistic charge
+      bot.charge(nearest_charger) 
+
+    #threshold charging
+    elif bot.soc / bot.max_soc < charge_threshold[bot.kind] and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
       if nearest_charger:                                                                                                  # moves towards the charger                        
         bot.charge(nearest_charger) # uses bot.charge function to move and charge towards nearest charger
-                                                  
+
     if bot.activity == 'idle':                                                  
       for pizza in es.deliverables():
         if pizza.status == 'ready':
