@@ -6,7 +6,9 @@ demonstrating the use of the ecosystem factory and deliverable creation function
 It simulates the operation of delivery bots, including charging and delivering pizzas, while providing options for debugging and message display.
 """
 
+from robots.ecosystem.ecosystem import energy_consumption
 from robots.ecosystem.factory import ecofactory
+from robots.ecosystem.ecosystem import distance
 
 # Duration is set to two weeks for development and rapid testing. Set to 52 weeks for your final tests.
 
@@ -17,7 +19,7 @@ plt.ion()         # interactive mode ON (non-blocking windows)
 # Create and configure the ecosystem using the factory function. 
 # Study the factory function code to understand how the ecosystem is being created 
 # and configured. Adjust the parameters as needed for your testing and development.  
-es = ecofactory(robots = 1, droids = 0, drones = 0, chargers = [1,15], pizzas = 9)
+es = ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9)
 
 
 
@@ -28,7 +30,25 @@ es.messages_on = False                                                          
 es.duration = "2 week"                                                          # We are aiming to run for a year with minimum or no bot breakages
 
 home = [40,20, 0]                                                               # Place to which bots will return when idle and from which they will start. This is also the location of the charger in this example, but it doesn't have to be. You can change this and the charger location to test the bots' ability to navigate around the ecosystem.
-charge_threshold = 0.20                                                         # this is the soc percentage at which bots will decide to charge. This can be optimised and varied for each kind (see stretch objective)                               
+
+charge_threshold = { # variable charging thresholds for different bot kinds. 
+  'Robot': 0.25,
+  'Droid': 0.20,
+  'Drone': 0.30
+}                            
+
+def find_nearest_charger(bot, es): #function to find nearest charger
+  nearest_charger = None
+  min_distance = float('inf') #start with inf distance so any charger can be accepted
+  
+  for charger in es.chargers():
+    if charger.status == 'vacant':
+      d = distance(bot.coordinates, charger.coordinates) #in built distance function to calculate distance between bot and charger
+      if d < min_distance:
+        min_distance = d # updates minimum distance
+        nearest_charger = charger # assigns nearest charger to bot
+  
+  return nearest_charger, min_distance
 
 while es.active:
 
@@ -36,13 +56,12 @@ while es.active:
 
     #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
 
-    if bot.kind == 'Robot':                                                                     # if the bot is a robot, we want to check its soc and decide whether to charge or deliver. Droids and drones don't have to worry about charging, so we can skip this for them.
-      if pizza.weight == 12:
-        bot.deliver(pizza)
-
-    if bot.soc / bot.max_soc < charge_threshold and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
-      bot.charge(charger)                                                       # initiate charging.
-    if bot.activity == 'idle':                                                  # if bot is idle, contract to deliver a ready pizza.
+    if bot.soc / bot.max_soc < charge_threshold[bot.kind] and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
+      nearest_charger, distance_to_charger = find_nearest_charger(bot, es)    # uses function to find nearest charger and distance to the charger    
+      if nearest_charger:                                                                                                  # moves towards the charger                        
+        bot.charge(nearest_charger) # uses bot.charge function to move and charge towards nearest charger
+                                                  
+    if bot.activity == 'idle':                                                  
       for pizza in es.deliverables():
         if pizza.status == 'ready':
           bot.deliver(pizza)                                                    # ensure we do not contract to deliver a pizza already contracted by another bot
@@ -52,4 +71,3 @@ while es.active:
     if bot.target_destination:bot.move()                                        # move whilst we have a destination. At the end of delivery, the bot status will be set to idle
 
   es.update()                                                                   # update when all bots have been processed and moved
-
