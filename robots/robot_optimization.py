@@ -37,6 +37,26 @@ charge_threshold = { # variable charging thresholds for different bot kinds.
   'Drone': 0.30
 }                            
 
+def run_baseline(es):
+    es.display(show=0)
+    es.messages_on = False
+    es.duration = "52 week"
+    charger = es.chargers()[0]
+    while es.active:
+        for bot in es.bots():
+            if bot.soc / bot.max_soc < 0.20 and bot.station is None:
+                bot.charge(charger)
+            if bot.activity == 'idle':
+                for pizza in es.deliverables():
+                    if pizza.status == 'ready':
+                        bot.deliver(pizza)
+                        break
+            if bot.target_destination:
+                bot.move()
+        es.update()
+    return es
+
+
 def find_nearest_charger(bot, es): #function to find nearest charger
   nearest_charger = None
   min_distance = float('inf') #start with inf distance so any charger can be accepted
@@ -61,28 +81,46 @@ def select_optimized_pizza(bot, es): # function to select most optimal pizza
         min_distance = closest_pizza_distance 
         optimal_pizza = pizza 
   return optimal_pizza
-    
-while es.active:
+   
+def run_optimized(es):
+  es.display(show=0)
+  es.messages_on = False
+  es.duration = "52 week"
+  while es.active:
+    for bot in es.bots():
 
-  for bot in es.bots():
+      #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
 
-    #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
+      nearest_charger, d = find_nearest_charger(bot, es) #find nearest charger for oppotunisitc charging
+      if d < 3 and bot.soc / bot.max_soc < (charge_threshold[bot.kind]+ 0.10) and bot.station is None: #if within 3 units and current charge is below threshold + 10%, robot goes for opportunistic charge
+        bot.charge(nearest_charger) 
 
-    nearest_charger, d = find_nearest_charger(bot, es) #find nearest charger for oppotunisitc charging
-    if d < 3 and bot.soc / bot.max_soc < (charge_threshold[bot.kind]+ 0.10) and bot.station is None: #if within 3 units and current charge is below threshold + 10%, robot goes for opportunistic charge
-      bot.charge(nearest_charger) 
+      #threshold charging
+      elif bot.soc / bot.max_soc < charge_threshold[bot.kind] and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
+        if nearest_charger:                                                                                                  # moves towards the charger                        
+          bot.charge(nearest_charger) # uses bot.charge function to move and charge towards nearest charger
 
-    #threshold charging
-    elif bot.soc / bot.max_soc < charge_threshold[bot.kind] and bot.station is None:        # decision to charge when percent soc = 20%. This can be optimised and varied for each kind (see stretch objective)
-      if nearest_charger:                                                                                                  # moves towards the charger                        
-        bot.charge(nearest_charger) # uses bot.charge function to move and charge towards nearest charger
+      if bot.activity == 'idle':                                                  
+        pizza = select_optimized_pizza(bot, es)
+        if pizza:
+          bot.deliver(pizza) #if pizza is found, bot deliver function will tel the bot to deliver it
+        if not bot.destination and bot.coordinates != home:
+          bot.target_destination = home                                           # if we get here, we've gone through the list of pizzas and none was ready
+      if bot.target_destination:bot.move()                                        # move whilst we have a destination. At the end of delivery, the bot status will be set to idle
 
-    if bot.activity == 'idle':                                                  
-      pizza = select_optimized_pizza(bot, es)
-      if pizza:
-        bot.deliver(pizza) #if pizza is found, bot deliver function will tel the bot to deliver it
-      if not bot.destination and bot.coordinates != home:
-        bot.target_destination = home                                           # if we get here, we've gone through the list of pizzas and none was ready
-    if bot.target_destination:bot.move()                                        # move whilst we have a destination. At the end of delivery, the bot status will be set to idle
+    es.update()                                                              # update when all bots have been processed and moved
+  return es
 
-  es.update()                                                                   # update when all bots have been processed and moved
+results = {}
+results['baseline'] = run_baseline(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
+results['optimized'] = run_optimized(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
+
+print(f"\n{'Run':<12} {'Units':>8} {'Weight':>8} {'Distance':>10} {'Energy':>8} {'Damage':>8}")
+print("-" * 56)
+for run, es in results.items():
+    total_weight = sum(r['weight_delivered'] for r in es.registry(kind_class='Bot').values())
+    total_units = sum(r['units_delivered'] for r in es.registry(kind_class='Bot').values())
+    total_distance = sum(r['distance'] for r in es.registry(kind_class='Bot').values())
+    total_energy = sum(r['energy'] for r in es.registry(kind_class='Bot').values())
+    total_damage = sum(r['damage'] for r in es.registry(kind_class='Bot').values())
+    print(f"{run:<12} {total_units:>8} {total_weight:>8} {total_distance:>10.1f} {total_energy:>8.1f} {total_damage:>8}")
