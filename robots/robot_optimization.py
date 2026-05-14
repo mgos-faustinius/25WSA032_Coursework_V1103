@@ -19,7 +19,7 @@ plt.ion()         # interactive mode ON (non-blocking windows)
 # Create and configure the ecosystem using the factory function. 
 # Study the factory function code to understand how the ecosystem is being created 
 # and configured. Adjust the parameters as needed for your testing and development.  
-es = ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9)
+es = ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125) # increased max weight to 125 to account for heaviest possible pizza robot can take
 
 
 
@@ -50,6 +50,18 @@ def find_nearest_charger(bot, es): #function to find nearest charger
   
   return nearest_charger, min_distance
 
+def select_optimized_pizza(bot, es): # function to select most optimal pizza
+  optimal_pizza = None
+  min_distance = float ('inf')
+  
+  for pizza in es.deliverables():
+    if pizza.status == 'ready' and pizza.weight <= bot.max_payload: # check if pizza is ready and within bot's carrying capacity
+      closest_pizza_distance = distance(bot.coordinates, pizza.coordinates)
+      if closest_pizza_distance < min_distance:
+        min_distance = closest_pizza_distance 
+        optimal_pizza = pizza 
+  return optimal_pizza
+    
 while es.active:
 
   for bot in es.bots():
@@ -66,10 +78,9 @@ while es.active:
         bot.charge(nearest_charger) # uses bot.charge function to move and charge towards nearest charger
 
     if bot.activity == 'idle':                                                  
-      for pizza in es.deliverables():
-        if pizza.status == 'ready':
-          bot.deliver(pizza)                                                    # ensure we do not contract to deliver a pizza already contracted by another bot
-          break
+      pizza = select_optimized_pizza(bot, es)
+      if pizza:
+        bot.deliver(pizza) #if pizza is found, bot deliver function will tel the bot to deliver it
       if not bot.destination and bot.coordinates != home:
         bot.target_destination = home                                           # if we get here, we've gone through the list of pizzas and none was ready
     if bot.target_destination:bot.move()                                        # move whilst we have a destination. At the end of delivery, the bot status will be set to idle
