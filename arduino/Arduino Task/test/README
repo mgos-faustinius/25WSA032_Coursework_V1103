@@ -11,7 +11,7 @@ More information about PlatformIO Unit Testing:
 - https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
 
 
-Memory explanation:
+## Memory explanation:
 - The array is autofilled based on the mode, where the variable numSamples dynamically decides the amount of samples collected, saving memory.
 - system utilizes 6 global float arrays of size 720, plus supporting variables:
 - 6 × 720 × 4 bytes = 17,280 bytes of RAM for arrays alone

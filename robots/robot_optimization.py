@@ -37,22 +37,22 @@ charge_threshold = { # variable charging thresholds for different bot kinds.
   'Drone': 0.30
 }                            
 
-def run_baseline(es):
+def run_baseline(es): # function to run the default ecosystem without optimizations, to be used as a benchmark in the table against the optimized file
     es.display(show=0)
     es.messages_on = False
-    es.duration = "52 week"
+    es.duration = "52 week" # duration set to 52 weeks for final data collection.
     charger = es.chargers()[0]
     while es.active:
         for bot in es.bots():
-            if bot.soc / bot.max_soc < 0.20 and bot.station is None:
-                bot.charge(charger)
-            if bot.activity == 'idle':
-                for pizza in es.deliverables():
-                    if pizza.status == 'ready':
-                        bot.deliver(pizza)
-                        break
-            if bot.target_destination:
-                bot.move()
+          if bot.soc / bot.max_soc < 0.20 and bot.station is None:
+              bot.charge(charger)
+          if bot.activity == 'idle':
+             for pizza in es.deliverables():
+               if pizza.status == 'ready':
+                  bot.deliver(pizza)
+                  break
+          if bot.target_destination:
+            bot.move()
         es.update()
     return es
 
@@ -111,12 +111,12 @@ def run_optimized(es):
     es.update()                                                              # update when all bots have been processed and moved
   return es
 
-results = {}
+results = {} # dictionary to store the results of both baseline and optimized ecosystems to be compared in the table
 results['baseline'] = run_baseline(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
 results['optimized'] = run_optimized(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
 
-print(f"\n{'Run':<12} {'Units':>8} {'Weight':>8} {'Distance':>10} {'Energy':>8} {'Damage':>8}")
-print("-" * 56)
+print(f"\n{'Run':<12} {'Units':>8} {'Weight':>8} {'Distance':>10} {'Energy':>8} {'Damage':>8}") # labels for the table
+print("---------------------------------------------------------") # seperator
 for run, es in results.items():
     total_weight = sum(r['weight_delivered'] for r in es.registry(kind_class='Bot').values())
     total_units = sum(r['units_delivered'] for r in es.registry(kind_class='Bot').values())
