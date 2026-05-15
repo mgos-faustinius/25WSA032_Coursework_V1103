@@ -40,7 +40,7 @@ According to the plot, both 0.01 hz and about 1.0 hz had the highest magnitudes
 ### Was the signal mainly low-frequency?
 A majority of it according to the plot was low frequency except for 2 peaks at both ends of the graph.
 ### Did the DFT reveal any repeated pattern or periodic fluctuation?
-The main pattern was the 2 major peaks at both ends of the graph, which corresponded with the massive changes in temperature at the start and end of the temperature vs time graph as the frequency of change heavily flucuated at both the large peak and the trough.
+The DFT revealed that the dominant frequency components were around lower frequencies near 0hz, which meant that temperature changes were slow instead of having rapid flucuations, which is consistent with the data as it only changed around 0.01-0.03 C at max throughout the collection period.
 ### Was there evidence of noise in higher-frequency components?
 In the magnitude frequency graph, there is a limited but still very present amount of noise close to the frequency peaks on the graph.
 ## System behaviour
