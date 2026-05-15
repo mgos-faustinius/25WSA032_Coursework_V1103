@@ -14,7 +14,7 @@ For this project, commit titles and structure was based on the Conventional Comm
 ## File Locations:
 
 ### For Task 2:
-The file with temperature sensor optimization code is labelled "temperature_optimization.ino" found in the src folder within the arduino folder. For this coursework, the Platform.io IDE was used to build and upload code onto the arduino, and it is heavily advised that for testing and analysis of my code, this IDE is used.
+The file with temperature sensor optimization code is labelled "temperature_optimization.ino" found in the within the arduino/Arduino Task folder. For this coursework, the Platform.io IDE was used to build and upload code onto the arduino, and it is heavily advised that for testing and analysis of my code, this IDE is used.
 
 ### For Task 3:
 The file with optimizations as laid out by the task is titled robot_optimization, and is found in the robots folder. utilize the run command in the venv  python.exe -m robots.robot_optimization or if on mac (which is what i used): 
