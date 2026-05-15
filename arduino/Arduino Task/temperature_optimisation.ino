@@ -17,7 +17,7 @@ const int ACTIVE = 0;
 const int IDLE = 1;
 const int POWER_DOWN = 2;
 int power_mode = ACTIVE; // variable to track current power mode, start in active mode
-unsigned long timecollecting = 18000; //variable for time spent collecting data
+unsigned long timecollecting = 180000; //variable for time spent collecting data
 int IDLEcyclecount = 0; //counter for number of cycles in IDLE mode, if 5 are idle straight it goes to power down
 float temp_differences[60]; // array to store difference between consecutive temp readings
 float temp_moving_avg = 0; // calculate moving average of temperature differences
