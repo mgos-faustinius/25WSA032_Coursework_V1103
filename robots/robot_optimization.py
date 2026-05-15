@@ -17,21 +17,11 @@ plt.close('all')  # optional: cleans up leftovers from prior runs
 plt.ion()         # interactive mode ON (non-blocking windows)
 
 # Create and configure the ecosystem using the factory function. 
-# Study the factory function code to understand how the ecosystem is being created 
-# and configured. Adjust the parameters as needed for your testing and development.  
-es = ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125) # increased max weight to 125 to account for heaviest possible pizza robot can take
-
-
-
-charger = es.chargers()[0]
-es.display(show = 1, pause = 10)                                                # show = 0 will turn off the display and speed up the run. Set to 1 for development and debugging, set to 0 for final runs. Note that when show = 0, you will not see the ecosystem or any messages, so it is wise to turn on messages (es.messages_on = True) when show = 0 for development and debugging. 
-es.debug = False                                                                # this will directly display damage and warning messages. Note show needs to be zero  (show = 0)
-es.messages_on = False                                                          # over 52 weeks it is wise to turn messages off as there are too many. But when researching turn on for shorter runs
-es.duration = "2 week"                                                          # We are aiming to run for a year with minimum or no bot breakages
+# Study the factory function code to understand how the ecosystem is being created and configured. Adjust the parameters as needed for your testing and development.                                                         # We are aiming to run for a year with minimum or no bot breakages
 
 home = [40,20, 0]                                                               # Place to which bots will return when idle and from which they will start. This is also the location of the charger in this example, but it doesn't have to be. You can change this and the charger location to test the bots' ability to navigate around the ecosystem.
 
-charge_threshold = { # variable charging thresholds for different bot kinds. 
+charge_threshold = { # variable charging thresholds for different bot kinds. Each was chosen after factoring in their weight class, carrying capacity, and charging capacity.
   'Robot': 0.25,
   'Droid': 0.20,
   'Drone': 0.30
@@ -42,7 +32,7 @@ def run_baseline(es): # function to run the default ecosystem without optimizati
     es.messages_on = False
     es.duration = "52 week" # duration set to 52 weeks for final data collection.
     charger = es.chargers()[0]
-    while es.active:
+    while es.active: # default decision making from the ecosystem_operation.py file
         for bot in es.bots():
           if bot.soc / bot.max_soc < 0.20 and bot.station is None:
               bot.charge(charger)
@@ -58,6 +48,11 @@ def run_baseline(es): # function to run the default ecosystem without optimizati
 
 
 def find_nearest_charger(bot, es): #function to find nearest charger
+  '''
+  This function iterates through the list of chargers in the environment and calulates the distance from the bot
+  to each charger. Keeping track of the nearest charger and its distance, it returns the nearest charger
+  and it's distance so the bot can charge at the nearest one no matter where it is.
+  '''
   nearest_charger = None
   min_distance = float('inf') #start with inf distance so any charger can be accepted
   
@@ -71,27 +66,32 @@ def find_nearest_charger(bot, es): #function to find nearest charger
   return nearest_charger, min_distance
 
 def select_optimized_pizza(bot, es): # function to select most optimal pizza
-  optimal_pizza = None
-  min_distance = float ('inf')
+  '''
+  This function iterates through the list of deliverables to find the closest pizza that is ready, and within the bot's
+  carrying capacity. It then returns the optimal pizza for the bot to deliver.
+  Simple for-loop optimization that iterates through every pizza and compares the distance to the bot.
+  '''
+  optimal_pizza = None # starts at none so it doesn't lock in a random pizza by accident
+  min_distance = float ('inf') # set with inf distance so any pizza on the plot can be accepted.
   
   for pizza in es.deliverables():
     if pizza.status == 'ready' and pizza.weight <= bot.max_payload: # check if pizza is ready and within bot's carrying capacity
       closest_pizza_distance = distance(bot.coordinates, pizza.coordinates)
       if closest_pizza_distance < min_distance:
-        min_distance = closest_pizza_distance 
-        optimal_pizza = pizza 
+        min_distance = closest_pizza_distance # updates minimum distance to the closest pizza distance making it the optimal pizza
+        optimal_pizza = pizza #assigning the optimal pizza to the bot
   return optimal_pizza
    
 def run_optimized(es):
   es.display(show=0)
   es.messages_on = False
-  es.duration = "52 week"
+  es.duration = "52 week" #set to 52 weeks for final data collection and analysis
   while es.active:
     for bot in es.bots():
 
       #create_deliverables(es)                                                     # Use the create deliverables function to maintain a stock of ready pizzas
 
-      nearest_charger, d = find_nearest_charger(bot, es) #find nearest charger for oppotunisitc charging
+      nearest_charger, d = find_nearest_charger(bot, es) #find nearest charger for oppotunisitc charging, checks if it's within 3 units so it can charge before going to delivering the pizzas, minimizing damage.
       if d < 3 and bot.soc / bot.max_soc < (charge_threshold[bot.kind]+ 0.10) and bot.station is None: #if within 3 units and current charge is below threshold + 10%, robot goes for opportunistic charge
         bot.charge(nearest_charger) 
 
@@ -123,4 +123,4 @@ for run, es in results.items():
     total_distance = sum(r['distance'] for r in es.registry(kind_class='Bot').values())
     total_energy = sum(r['energy'] for r in es.registry(kind_class='Bot').values())
     total_damage = sum(r['damage'] for r in es.registry(kind_class='Bot').values())
-    print(f"{run:<12} {total_units:>8} {total_weight:>8} {total_distance:>10.1f} {total_energy:>8.1f} {total_damage:>8}")
+    print(f"{run:<12} {total_units:>8} {total_weight:>8} {total_distance:>10.1f} {total_energy:>8.1f} {total_damage:>8}") # formatted table using f strings using values from the result dictionary
