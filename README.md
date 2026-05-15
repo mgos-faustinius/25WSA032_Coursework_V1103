@@ -26,6 +26,7 @@ IMPORTANT: ensure the python environment is in a venv before running the file ot
 
 If it appears to buffer, do not click away or try to refresh, KEEP LETTING IT RUN. it takes time to generate the multiple environments for the table, so let it take its time and the table with tabitulated comparison data should be the output of the terminal.
 
+Written analysis is in the robot_optimization_analysis.md file with a table and a short annotation on why said tabitulated results are the way they are.
 
 ### For Task 4:
 Multiple files were created for the written analysis and program to read the CSV File.

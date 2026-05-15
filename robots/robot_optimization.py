@@ -115,6 +115,7 @@ results = {} # dictionary to store the results of both baseline and optimized ec
 results['baseline'] = run_baseline(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
 results['optimized'] = run_optimized(ecofactory(robots = 3, droids = 3, drones = 3, chargers = [[1,15], [20, 3], [30, 25]], pizzas = 9, max_weight = 125))
 
+print("\n=== KPI PERFORMANCE COMPARISON: BASELINE VS OPTIMISED ===")
 print(f"\n{'Run':<12} {'Units':>8} {'Weight':>8} {'Distance':>10} {'Energy':>8} {'Damage':>8}") # labels for the table
 print("---------------------------------------------------------") # seperator
 for run, es in results.items():

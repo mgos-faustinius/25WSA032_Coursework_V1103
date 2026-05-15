@@ -105,7 +105,7 @@ float moving_average(){
 int decide_power_mode(){
  if (fk <= 0.1 && temp_moving_avg <= 0.1){ // if dominant frequency is less than 0.1 Hz, we can go to sleep mode. temp_moving_avg set to 0.1 as a low threshold
    return POWER_DOWN;
- } else if (fk > 0.5 || temp_moving_avg >= 0.5){ // if dominant frequency is greater than 0.5 hz, we go to active mode. temp_moving_avg set to 0.5 degrees as a high difference in change. selected OR function as it could have high oscillations but low change in magnitude or vice versa, so it should only work when both magnitude and fk is high
+ } else if (fk > 0.5 || temp_moving_avg >= 0.5){ // if dominant frequency is greater than 0.5 hz, we go to active mode. temp_moving_avg set to 0.5 degrees as a high difference in change. selected OR function as it could have high oscillations but low change in magnitude or vice versa, so it should only work when both magnitude OR fk is high
    return ACTIVE;
  } else { // if dominant frequency is between 0.1 and 0.5 Hz, go to idle mode
    return IDLE;
@@ -119,7 +119,7 @@ void setup()
 
 void loop()
 {
-  Serial.print("Collecting Data...\n");
+  Serial.print("Collecting Data...\n"); // visual print out on serial monitor to assure that the program is running without memory failure/overload
   collect_temperature_data(); // collect temperature data for 3 minutes at the start
   timecollecting = 60000;
   apply_dft(); // apply DFT to collected data to find dominant frequency
@@ -128,9 +128,9 @@ void loop()
   power_mode = decide_power_mode(); // decide power mode based on dominant frequency
   Serial.print("Moving Average of Temperature Differences: ");
   Serial.println(temp_moving_avg);
-  if (power_mode == ACTIVE){
+  if (power_mode == ACTIVE){ //decision for when power mode is active
     Serial.println("Power Mode: ACTIVE");
-    sampling_rate = 1000/(fk*2);
+    sampling_rate = 1000/(fk*2); // 
     if (sampling_rate < 250){
     sampling_rate = 250;
       } else if (sampling_rate > 2000){
