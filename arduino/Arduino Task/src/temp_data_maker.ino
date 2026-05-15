@@ -6,7 +6,7 @@ const int pinTempSensor = A0; // Grove - Temperature Sensor connect to A0
 
 //my variables
 float temperature_data_array[60]; // array to store temperature data to process in DFT
-int sampling_rate = 180000; // sampling rate in ms, changeable, 3 min first
+int sampling_rate = 1000; // sampling rate in ms, changeable, 3 min first
 int numSamples = 0; // number of samples to collect
 float real[60]; // array to store real part of DFT results,
 float imag[60]; // array to store imaginary part of DFT results 
@@ -17,7 +17,7 @@ const int ACTIVE = 0;
 const int IDLE = 1;
 const int POWER_DOWN = 2;
 int power_mode = ACTIVE; // variable to track current power mode, start in active mode
-unsigned long timecollecting = 10000; //variable for time spent collecting data
+unsigned long timecollecting = 180000; //variable for time spent collecting data
 int IDLEcyclecount = 0; //counter for number of cycles in IDLE mode, if 5 are idle straight it goes to power down
 float temp_differences[60]; // array to store difference between consecutive temp readings
 float temp_moving_avg = 0; // calculate moving average of temperature differences
@@ -119,6 +119,7 @@ void setup()
 
 void loop()
 {
+  Serial.print("collecting");
   collect_temperature_data(); // collect temperature data for 3 minutes at the start
   timecollecting = 60000;
   apply_dft(); // apply DFT to collected data to find dominant frequency
