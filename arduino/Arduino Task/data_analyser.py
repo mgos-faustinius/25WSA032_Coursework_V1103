@@ -10,6 +10,7 @@ plt.plot(df['Time'], df['Temperature'])
 plt.xlabel('Time (ms)')
 plt.ylabel('Temperature (°C)')
 plt.title('Temperature vs Time')
+plt.savefig('temp_vs_time.png') # save the plot as an image file
 plt.show()
 
 # PLOT 2: plotting magnitude vs frequency
@@ -18,6 +19,7 @@ plt.plot(df['Frequency'], df['Magnitude'])
 plt.xlabel('Frequency (Hz)')
 plt.ylabel('Magnitude')
 plt.title('Magnitude vs Frequency')
+plt.savefig('magnitude_vs_frequency.png') 
 plt.show()
 
 #Plot 3: smoothed temp and temp vs time 
@@ -30,14 +32,16 @@ plt.legend()
 plt.xlabel('Time (ms)')
 plt.ylabel('Temperature (°C)')
 plt.title('Smoothed Temperature vs Time')
+plt.savefig('smoothed_temp_vs_time.png') 
 plt.show()
 
 #plot 4: histogram of temperature values
 plt.figure()
-plt.hist(df['Temperature'], bins=20)
+plt.hist(df['Temperature'], bins=20) # number of bars (bins) set to 20
 plt.xlabel('Temperature (°C)')
 plt.ylabel('Frequency')
 plt.title('Histogram of Temperature Values')
+plt.savefig('temp_histogram.png') 
 plt.show()
 
 #plot 5: temperature change rate vs time
@@ -47,4 +51,5 @@ plt.plot(df['Time'], df['Temp_Change_Rate'])
 plt.xlabel('Time (ms)')
 plt.ylabel('Temperature Change Rate (°C/ms)')
 plt.title('Temperature Change Rate vs Time')
+plt.savefig('temp_change_rate_vs_time.png') 
 plt.show()
